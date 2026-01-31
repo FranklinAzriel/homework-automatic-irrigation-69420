@@ -44,7 +44,7 @@ An intelligent, IoT-ready automated plant watering system using Arduino Uno, cap
 ## 💻 Installation
 1.  Open the project in **VS Code** with **PlatformIO**.
 2.  Upload the `src/main.cpp` code to your Arduino Uno.
-3.  Open `index.html` in **Google Chrome** or **Microsoft Edge**.
+3.  Open This [Website](https://franklinazriel.github.io/homework-automatic-irrigation-69420/) or `index.html` in **Google Chrome** or **Microsoft Edge**.
 4.  Close the Serial Monitor in VS Code.
 5.  Click **Connect to Arduino** on the Web Dashboard.
 
