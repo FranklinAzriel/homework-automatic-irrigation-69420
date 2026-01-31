@@ -37,9 +37,9 @@ An intelligent, IoT-ready automated plant watering system using Arduino Uno, cap
 | **LED Anode (+)** | **D13** | Status Light (Optional) |
 
 ### 2. Pump & Power Connection (The Switch)
-* **Power Bank (+)** ➔ Relay **COM** (Central Terminal)
+* **Power Source (+)** ➔ Relay **COM** (Central Terminal)
 * **Relay NO** (Normally Open) ➔ **Pump USB (+)** (Red Wire)
-* **Power Bank (-)** ➔ **Pump USB (-)** (Black Wire)
+* **Power Source (-)** ➔ **Pump USB (-)** (Black Wire)
 
 ## 💻 Installation
 1.  Open the project in **VS Code** with **PlatformIO**.
