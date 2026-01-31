@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project 69420 | Command Center</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --accent-green: #00ff88;
+            --accent-blue: #58a6ff;
+            --accent-red: #ff7b72;
+            --text-main: #c9d1d9;
+            --border-color: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            padding: 20px 0;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 { margin: 0; color: var(--accent-blue); letter-spacing: 2px; }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .card:hover { transform: translateY(-5px); }
+
+        .label { font-size: 0.9em; color: #8b949e; text-transform: uppercase; margin-bottom: 10px; }
+        .value { font-size: 2.5em; font-weight: bold; }
+
+        #moisture-val { color: var(--accent-green); }
+        #pump-val { color: var(--accent-red); }
+        #mode-val { color: var(--accent-blue); }
+
+        /* CONTROL PANEL */
+        .control-panel {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-control {
+            padding: 15px 30px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.3s, transform 0.1s;
+            text-transform: uppercase;
+            min-width: 140px;
+        }
+
+        .btn-control:active { transform: scale(0.95); }
+        .btn-on { background-color: var(--accent-green); color: #000; }
+        .btn-off { background-color: var(--accent-red); color: #fff; }
+        .btn-auto { background-color: var(--accent-blue); color: #fff; }
+
+        /* TERMINAL */
+        .terminal-container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 30px 0;
+            background: #000;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: #21262d;
+            padding: 8px 15px;
+            font-size: 0.8em;
+            color: #8b949e;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #log-console {
+            height: 180px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #d1d1d1;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        #connectBtn {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        #connectBtn:disabled { background-color: #30363d; }
+
+        .status-dot {
+            height: 12px;
+            width: 12px;
+            background-color: #444;
+            border-radius: 50%;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .dot-active { background-color: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>AUTOMATIC IRRIGATION 69420 COMMAND CENTER</h1>
+</header>
+
+<button id="connectBtn">🔌 CONNECT TO ARDUINO</button>
+
+<div class="container">
+    <div class="card">
+        <div class="label">Moisture Sensor</div>
+        <div id="moisture-val" class="value">--</div>
+        <div style="font-size: 0.8em; color: #8b949e;">RAW ANALOG UNITS</div>
+    </div>
+    
+    <div class="card">
+        <div class="label">Pump Status</div>
+        <div id="pump-val" class="value">IDLE</div>
+        <div id="pump-indicator"><span class="status-dot"></span></div>
+    </div>
+    
+    <div class="card">
+        <div class="label">System Mode</div>
+        <div id="mode-val" class="value">WAITING</div>
+    </div>
+
+    <div class="card control-panel">
+        <div class="label" style="width: 100%; margin-bottom: 15px;">Manual Overrides</div>
+        <button class="btn-control btn-on" onclick="sendCommand('ON')">Force ON</button>
+        <button class="btn-control btn-off" onclick="sendCommand('OFF')">Force OFF</button>
+        <button class="btn-control btn-auto" onclick="sendCommand('AUTO')">Set AUTO</button>
+    </div>
+</div>
+
+<div class="terminal-container">
+    <div class="terminal-header">
+        <span>CONSOLE OUTPUT</span>
+        <span>BAUD: 9600</span>
+    </div>
+    <div id="log-console">Please connect your Arduino to start monitoring...</div>
+</div>
+
+<script>
+    let port;
+    let reader;
+    let writer;
+    const connectBtn = document.getElementById('connectBtn');
+    const logConsole = document.getElementById('log-console');
+
+    connectBtn.onclick = async () => {
+        try {
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 9600 });
+            
+            connectBtn.disabled = true;
+            connectBtn.innerText = "CONNECTED ✅";
+            logConsole.innerHTML = "Connected! Waiting for data stream...<br>";
+
+            const decoder = new TextDecoderStream();
+            port.readable.pipeTo(decoder.writable);
+            reader = decoder.readable.getReader();
+
+            readLoop();
+        } catch (err) {
+            console.error(err);
+            alert("Connection Failed.");
+        }
+    };
+
+    async function readLoop() {
+        let buffer = "";
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            
+            buffer += value;
+            if (buffer.includes('\n')) {
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); 
+
+                lines.forEach(line => {
+                    if (line.startsWith("JSON:")) {
+                        try {
+                            const data = JSON.parse(line.substring(5));
+                            updateUI(data);
+                        } catch (e) { }
+                    }
+                });
+            }
+        }
+    }
+
+    async function sendCommand(cmd) {
+        if (!port || !port.writable) {
+            alert("Connect Arduino first!");
+            return;
+        }
+        const encoder = new TextEncoder();
+        const writer = port.writable.getWriter();
+        await writer.write(encoder.encode(cmd + "\n"));
+        writer.releaseLock();
+        
+        const time = new Date().toLocaleTimeString();
+        logConsole.innerHTML += `<span style="color: var(--accent-blue)">[${time}] TX -> CMD: ${cmd}</span><br>`;
+        logConsole.scrollTop = logConsole.scrollHeight;
+    }
+
+    function updateUI(data) {
+        document.getElementById('moisture-val').innerText = data.raw;
+        document.getElementById('pump-val').innerText = data.pump;
+        document.getElementById('mode-val').innerText = data.mode;
+
+        const dot = document.querySelector('.status-dot');
+        const pumpText = document.getElementById('pump-val');
+        
+        if (data.pump === "WATERING" || data.pump === "RUNNING") {
+            dot.classList.add('dot-active');
+            pumpText.style.color = "var(--accent-green)";
+        } else {
+            dot.classList.remove('dot-active');
+            pumpText.style.color = "var(--accent-red)";
+        }
+
+        const now = new Date().toLocaleTimeString();
+        logConsole.innerHTML += `<span style="color: #8b949e">[${now}] RX <-</span> ${JSON.stringify(data)}<br>`;
+        logConsole.scrollTop = logConsole.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
